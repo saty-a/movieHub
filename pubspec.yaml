@@ -35,10 +35,23 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   get: ^4.7.2
+  retrofit: ^4.7.1
+  http: ^1.5.0
+  shimmer: ^3.0.0
+  cached_network_image: ^3.2.3
+  lucide_icons: ^0.115.0
+  dio: ^5.8.0+1
+  json_annotation: ^4.8.1
+  pretty_dio_logger: ^1.4.0
+  connectivity_plus: ^6.0.3
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  retrofit_generator: ^8.1.0
+  json_serializable: ^6.7.1
+  build_runner: ^2.4.7
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
