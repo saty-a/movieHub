@@ -1,40 +1,93 @@
-import '../models/response/trending_movie.dart';
-import '../network/retrofit_service.dart';
+import 'package:moviehub/app/utils/constants.dart';
 
-class TMDBRepository {
-  TMDBRepository({required this.restClient});
+import '../models/dto/configuration.dart';
+import '../models/dto/movie.dart';
+import '../network/network_requester.dart';
 
-  final MovieApiService restClient;
+class TMDBApiRepository {
+  TMDBApiRepository();
 
-  Future<List<Movie>> getTrending({
-    type = 'all',
-    time = 'week',
-    page = 1,
+  Future<List<Map<String, dynamic>>> getTrendingMovie({
+    String type = 'all',
+    String time = 'week',
   }) async {
-    final response = await restClient.getTrendingMovies(page);
-    return response.results;
+    try {
+      final response = await NetworkRequester.request.get(
+        path: '/trending/$type/$time',
+        query: {'api_key': Constants.apiKey},
+      );
+      return List<Map<String, dynamic>>.from(response['results']);
+    } catch (e) {
+      throw Exception('Failed to load trending: $e');
+    }
   }
 
-  // Future<Configuration> getConfiguration() async {
-  //   return Configuration.fromJson(await _client.getConfiguration());
-  // }
-  //
-  // Future<Movie> getDetails(id, type) async {
-  //   return Movie.fromJson(await _client.getDetails(id, type),
-  //       medialType: type, details: true);
-  // }
-  //
-  // Future<Season> getSeason(id, season) async {
-  //   return Season.fromJson(await _client.getSeason(id, season));
-  // }
-  //
-  // Future<List<Movie>> discover(type) async {
-  //   return (await _client.discover(type))
-  //       .map((item) => Movie.fromJson(item, medialType: type))
-  //       .toList();
-  // }
-  //
-  // Future<TMDBImages> getImages(id, type) async {
-  //   return TMDBImages.fromJson(await _client.getImages(id, type));
-  // }
+  Future<List<Map<String, dynamic>>> getNowPlayingMovie({
+    String language = 'en-US',
+    int page = 1,
+  }) async {
+    try {
+      final response = await NetworkRequester.request.get(
+        path: '/movie/now_playing',
+        query: {
+          'api_key': Constants.apiKey,
+          'language': language,
+          'page': page,
+        },
+      );
+
+      return List<Map<String, dynamic>>.from(response['results']);
+    } catch (e) {
+      throw Exception('Failed to load trending: $e');
+    }
+  }
+
+  Future<Configuration> getConfiguration() async {
+    return Configuration.fromJson(
+      await NetworkRequester.request.get(
+        path: '/configuration',
+        query: {'api_key': Constants.apiKey},
+      ),
+    );
+  }
+
+  Future<Movie> getDetails(int id, String type) async {
+    try {
+      return Movie.fromJson(
+        await NetworkRequester.request.get(
+          path: '/$type/$id',
+          query: {'api_key': Constants.apiKey},
+        ),
+        medialType: type,
+        details: true,
+      );
+    } catch (e) {
+      throw Exception('Failed to load details: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> searchMovies(String query) async {
+    try {
+      final response = await NetworkRequester.request.get(
+        path: '/search/movie',
+        query: {
+          'api_key': Constants.apiKey,
+          'language': 'en-US',
+          'query': query,
+          'page': '1',
+          'include_adult': 'false',
+        },
+      );
+
+      final results = response['results'] as List<dynamic>?;
+
+      if (results == null) {
+        return [];
+      }
+
+      return List<Map<String, dynamic>>.from(response['results']);
+    } catch (e) {
+      throw Exception('Failed to search movies: $e');
+    }
+  }
 }
