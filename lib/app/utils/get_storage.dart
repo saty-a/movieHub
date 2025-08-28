@@ -7,7 +7,7 @@ class StorageService extends GetxService {
 
   late GetStorage _box;
   static const String _favoritesKey = 'favorite_movies';
-
+  static const String _apiCachePrefix = 'api_cache:';
   // Initialize storage
   Future<void> init() async {
     await GetStorage.init();
@@ -45,7 +45,6 @@ class StorageService extends GetxService {
       return [];
     }
   }
-
 
   // Check if movie is favorite
   bool isFavorite(int movieId) {
@@ -95,5 +94,63 @@ class StorageService extends GetxService {
   int getFavoritesCount() {
     return getFavorites().length;
   }
-}
 
+  // Generic API response caching
+  String _cacheKey(String key) => '$_apiCachePrefix$key';
+
+  Future<void> cacheWrite(String key, dynamic data) async {
+    try {
+      final payload = {
+        'data': data,
+        'ts': DateTime.now().toIso8601String(),
+      };
+      await _box.write(_cacheKey(key), payload);
+    } catch (e) {
+      print('Error writing cache for $key: $e');
+    }
+  }
+
+  /// Read cached response or  returns null if missing or malformed
+  T? cacheRead<T>(String key) {
+    try {
+      final raw = _box.read(_cacheKey(key));
+      if (raw is Map && raw['data'] != null) {
+        return raw['data'] as T;
+      }
+      return null;
+    } catch (e) {
+      print('Error reading cache for $key: $e');
+      return null;
+    }
+  }
+
+  /// Get the timestamp when this cache entry was written
+  DateTime? cacheTimestamp(String key) {
+    try {
+      final raw = _box.read(_cacheKey(key));
+      if (raw is Map && raw['ts'] is String) {
+        return DateTime.tryParse(raw['ts'] as String);
+      }
+      return null;
+    } catch (e) {
+      print('Error reading cache timestamp for $key: $e');
+      return null;
+    }
+  }
+
+  /// Check if a cached entry exists and is not older than [maxAge]
+  bool cacheIsFresh(String key, Duration maxAge) {
+    final ts = cacheTimestamp(key);
+    if (ts == null) return false;
+    return DateTime.now().difference(ts) <= maxAge;
+  }
+
+  /// Remove a cached entry
+  Future<void> cacheRemove(String key) async {
+    try {
+      await _box.remove(_cacheKey(key));
+    } catch (e) {
+      print('Error removing cache for $key: $e');
+    }
+  }
+}
